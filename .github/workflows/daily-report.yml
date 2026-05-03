@@ -1,0 +1,62 @@
+name: 毎朝進捗レポート送信
+
+on:
+  # 毎朝7:30 JST = UTC 22:30（前日）
+  schedule:
+    - cron: '30 22 * * *'
+
+  # 手動実行ボタン（GitHubの画面からテスト実行できる）
+  workflow_dispatch:
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ① コードをチェックアウト
+      - name: コードを取得
+        uses: actions/checkout@v4
+
+      # ② Node.js セットアップ
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ③ 依存パッケージのインストール
+      - name: パッケージインストール
+        run: npm ci
+
+      # ④ Puppeteer用のChromium依存ライブラリをインストール
+      - name: Chromium依存ライブラリをインストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgbm-dev \
+            libasound2 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxkbcommon0 \
+            libxrandr2 \
+            xvfb
+
+      # ⑤ surgeをインストール
+      - name: surgeをインストール
+        run: npm install -g surge
+
+      # ⑥ レポート生成・送信
+      - name: 進捗レポートを送信
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+        run: node sendReport.js

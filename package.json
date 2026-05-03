@@ -1,0 +1,20 @@
+{
+  "name": "saito-progress-mailer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node sendReport.js",
+    "test": "node -e \"const cfg=require('./config'); console.log('設定確認OK:', cfg.mail.to);\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "googleapis": "^171.4.0",
+    "nodemailer": "^8.0.7",
+    "puppeteer": "^24.42.0"
+  }
+}
