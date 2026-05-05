@@ -3,6 +3,9 @@
 // Sheets取得 → HTML生成 → Surgeデプロイ → スクショ2枚 → メール送信
 // =====================================================
 
+// タイムゾーンを日本時間に固定（GitHub ActionsのサーバーはデフォルトがUTC）
+process.env.TZ = 'Asia/Tokyo';
+
 const puppeteer  = require('puppeteer');
 const nodemailer = require('nodemailer');
 const path       = require('path');
@@ -126,7 +129,7 @@ async function takeScreenshots(htmlContent) {
 }
 
 // ── メール送信 ────────────────────────────────────
-async function sendEmail({ tab1Png, tab2Png, taskCount, surgeUrl }) {
+async function sendEmail({ tab1Png, tab2Png, taskCount }) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -242,7 +245,7 @@ async function main() {
   // 5. メール送信
   console.log('\n[5/5] メール送信中...');
   try {
-    await sendEmail({ ...screenshots, taskCount: tasks.length, surgeUrl: `https://${config.surge.domain}` });
+    await sendEmail({ ...screenshots, taskCount: tasks.length });
     console.log(`  → 送信先: ${config.mail.to}`);
   } catch (err) {
     console.error('  ❌ メール送信失敗:', err.message);
