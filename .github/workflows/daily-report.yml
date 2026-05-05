@@ -47,6 +47,7 @@ jobs:
 
       - name: 進捗レポートを送信
         env:
+          TZ: Asia/Tokyo
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
