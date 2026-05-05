@@ -138,12 +138,13 @@ async function sendEmail({ tab1Png, tab2Png, taskCount, surgeUrl }) {
   const today = todayLabel();
   const subject = `【進捗レポート】${today} ／ ${config.dashboard.title}`;
 
-  const surgeSection = surgeUrl ? `
+  const surgeUrl = `https://${config.surge.domain}`;
+  const surgeSection = `
   <div style="background:white;border-radius:10px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
     <div style="font-size:11px;color:#64748b;margin-bottom:6px;">🔗 ダッシュボード URL</div>
     <a href="${surgeUrl}" style="font-size:14px;font-weight:700;color:#2563eb;word-break:break-all;">${surgeUrl}</a>
     <div style="font-size:10px;color:#94a3b8;margin-top:4px;">ガントチャートの詳細はこちらで確認できます</div>
-  </div>` : '';
+  </div>`;
 
   const htmlBody = `
 <div style="font-family:'Hiragino Kaku Gothic ProN',sans-serif;max-width:520px;margin:0 auto;background:#f0f4f8;padding:16px;border-radius:12px;">
@@ -241,7 +242,7 @@ async function main() {
   // 5. メール送信
   console.log('\n[5/5] メール送信中...');
   try {
-    await sendEmail({ ...screenshots, taskCount: tasks.length, surgeUrl });
+    await sendEmail({ ...screenshots, taskCount: tasks.length, surgeUrl: `https://${config.surge.domain}` });
     console.log(`  → 送信先: ${config.mail.to}`);
   } catch (err) {
     console.error('  ❌ メール送信失敗:', err.message);
