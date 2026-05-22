@@ -6,6 +6,9 @@
 // タイムゾーンを日本時間に固定（GitHub ActionsのサーバーはデフォルトがUTC）
 process.env.TZ = 'Asia/Tokyo';
 
+// ローカル実行時は .env から環境変数を読む（GitHub Actionsでは Secrets が使われる）
+require('dotenv').config();
+
 const puppeteer  = require('puppeteer');
 const nodemailer = require('nodemailer');
 const path       = require('path');

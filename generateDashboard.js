@@ -143,8 +143,11 @@ function buildGanttHtml(tasks, extraHolidays, today) {
   }
 
   // ── 月ヘッダー ──
+  // thead全体をstickyにするため、各thにposition:sticky;top指定を付ける
+  // 月行: top:0、日付行: top:14px（月行の高さ分ずらす）
+  const ROW_H = 14; // 各ヘッダー行の高さ(px)
   let html = '<table style="border-collapse:collapse;table-layout:fixed;" id="gantt-table"><thead><tr>';
-  html += `<th style="position:sticky;left:0;z-index:11;background:#f1f5f9;min-width:90px;max-width:90px;padding:0 4px;text-align:left;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;font-size:8px;color:#64748b;height:14px;" rowspan="2">タスク</th>`;
+  html += `<th style="position:sticky;left:0;top:0;z-index:13;background:#f1f5f9;min-width:90px;max-width:90px;padding:0 4px;text-align:left;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;font-size:8px;color:#64748b;height:${ROW_H}px;" rowspan="2">タスク</th>`;
 
   let cur = new Date(GANTT_START), prevM = -1, mSpan = 0, mCells = [];
   for (let i = 0; i < TOTAL_DAYS; i++) {
@@ -155,7 +158,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
   }
   mCells.push([`${prevM+1}月`, mSpan]);
   mCells.forEach(([lbl, span]) => {
-    html += `<th colspan="${span}" style="width:${CELL_W}px;min-width:${CELL_W}px;background:#dbeafe;color:#1d4ed8;font-size:8px;font-weight:700;height:14px;border:1px solid #e2e8f0;text-align:center;">${lbl}</th>`;
+    html += `<th colspan="${span}" style="position:sticky;top:0;z-index:12;width:${CELL_W}px;min-width:${CELL_W}px;background:#dbeafe;color:#1d4ed8;font-size:8px;font-weight:700;height:${ROW_H}px;border:1px solid #e2e8f0;text-align:center;">${lbl}</th>`;
   });
   html += '</tr><tr>';
 
@@ -165,7 +168,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
     const bg = isT ? 'rgba(37,99,235,0.15)' : isWE ? '#f8fafc' : 'white';
     const color = isT ? '#1d4ed8' : '#475569';
     const fw = isT ? '700' : '400';
-    html += `<th style="width:${CELL_W}px;min-width:${CELL_W}px;height:14px;font-size:7px;border:1px solid #e2e8f0;text-align:center;background:${bg};color:${color};font-weight:${fw};">${cur.getDate()}</th>`;
+    html += `<th style="position:sticky;top:${ROW_H}px;z-index:12;width:${CELL_W}px;min-width:${CELL_W}px;height:${ROW_H}px;font-size:7px;border:1px solid #e2e8f0;text-align:center;background:${bg};color:${color};font-weight:${fw};">${cur.getDate()}</th>`;
     cur.setDate(cur.getDate() + 1);
   }
   html += '</tr></thead><tbody>';
