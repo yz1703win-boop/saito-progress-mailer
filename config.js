@@ -45,9 +45,8 @@ module.exports = {
     ganttEndDate: new Date(2026, 6, 10),
   },
 
-  // ── Surge デプロイ設定 ────────────────────────────
-  surge: {
-    domain: 'saito-progress-dashboard.surge.sh',
-    token:  process.env.SURGE_TOKEN || '',
+  // ── GitHub Pages デプロイ設定 ─────────────────────
+  pages: {
+    url: 'https://yz1703win-boop.github.io/saito-progress-mailer/',
   }
 };

@@ -1,6 +1,6 @@
 // =====================================================
 // メインエントリーポイント
-// Sheets取得 → HTML生成 → Surgeデプロイ → スクショ2枚 → メール送信
+// Sheets取得 → HTML生成 → デプロイ用HTML書き出し → スクショ2枚 → メール送信
 // =====================================================
 
 // タイムゾーンを日本時間に固定（GitHub ActionsのサーバーはデフォルトがUTC）
@@ -10,7 +10,6 @@ const puppeteer  = require('puppeteer');
 const nodemailer = require('nodemailer');
 const path       = require('path');
 const fs         = require('fs');
-const { execSync } = require('child_process');
 
 const config                = require('./config');
 const { fetchAllData }      = require('./fetchSheetData');
@@ -33,30 +32,13 @@ function saveTempHtml(htmlContent) {
   return tmpPath;
 }
 
-// ── Surgeデプロイ用HTMLを書き出す ─────────────────
-// 実際のsurge実行はGitHub ActionsのStep（またはローカルのdeploySurge関数）で行う
-function prepareSurgeDeploy(htmlContent) {
-  const deployDir = path.join(__dirname, '_surge_deploy');
+// ── GitHub Pagesデプロイ用HTMLを書き出す ──────────
+// 実際のgit push（デプロイ）はGitHub ActionsのStepで行う
+function prepareDeployDir(htmlContent) {
+  const deployDir = path.join(__dirname, '_deploy');
   if (!fs.existsSync(deployDir)) fs.mkdirSync(deployDir);
   fs.writeFileSync(path.join(deployDir, 'index.html'), htmlContent, 'utf8');
   return deployDir;
-}
-
-// ── ローカル実行時のSurgeデプロイ ─────────────────
-function runSurgeLocally(deployDir) {
-  const domain = config.surge?.domain || 'saito-progress-dashboard.surge.sh';
-  const token  = config.surge?.token || process.env.SURGE_TOKEN || '';
-  console.log(`  → Surgeデプロイ中: ${domain}`);
-  try {
-    const cmd = token
-      ? `surge "${deployDir}" ${domain} --token ${token}`
-      : `surge "${deployDir}" ${domain}`;
-    execSync(cmd, { timeout: 60000, stdio: 'inherit' });
-    return `https://${domain}`;
-  } catch (err) {
-    console.warn('  ⚠️  Surgeデプロイ失敗（メール送信は続行）:', err.message);
-    return null;
-  }
 }
 
 // ── Puppeteerでスクリーンショット（Tab1 & Tab2）────
@@ -89,17 +71,14 @@ async function takeScreenshots(htmlContent) {
     const tab1Png = await page.screenshot({ type: 'png', fullPage: true });
 
     // ── Tab2（ガントチャート）────────────────────
-    // Tab2に切り替え
     await page.evaluate(() => {
       if (typeof showTab === 'function') showTab(2);
     });
     await new Promise(r => setTimeout(r, 500));
 
-    // ガントチャートは横に長いので幅を広げてキャプチャ
     await page.setViewport({ width: 1400, height: 700, deviceScaleFactor: 1.5 });
     await new Promise(r => setTimeout(r, 300));
 
-    // ガントをスクロールなしで全体表示
     await page.evaluate(() => {
       const wrap = document.getElementById('gantt-wrap');
       if (wrap) wrap.style.overflow = 'visible';
@@ -135,11 +114,11 @@ async function sendEmail({ tab1Png, tab2Png, taskCount }) {
   const today = todayLabel();
   const subject = `【進捗レポート】${today} ／ ${config.dashboard.title}`;
 
-  const surgeUrl = `https://${config.surge.domain}`;
-  const surgeSection = `
+  const pagesUrl = config.pages.url;
+  const pagesSection = `
   <div style="background:white;border-radius:10px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
     <div style="font-size:11px;color:#64748b;margin-bottom:6px;">🔗 ダッシュボード URL</div>
-    <a href="${surgeUrl}" style="font-size:14px;font-weight:700;color:#2563eb;word-break:break-all;">${surgeUrl}</a>
+    <a href="${pagesUrl}" style="font-size:14px;font-weight:700;color:#2563eb;word-break:break-all;">${pagesUrl}</a>
     <div style="font-size:10px;color:#94a3b8;margin-top:4px;">ガントチャートの詳細はこちらで確認できます</div>
   </div>`;
 
@@ -152,7 +131,7 @@ async function sendEmail({ tab1Png, tab2Png, taskCount }) {
     <p style="font-size:13px;color:#64748b;margin:4px 0 0;">タスク総数: <strong>${taskCount}件</strong></p>
   </div>
 
-  ${surgeSection}
+  ${pagesSection}
 
   <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:6px;padding:0 2px;">📋 進捗サマリー</div>
   <div style="background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);margin-bottom:12px;">
@@ -219,20 +198,11 @@ async function main() {
   const html = generateDashboard(tasks, holidays);
   console.log('  → 生成完了');
 
-  // 3. Surgeデプロイ用HTMLを書き出す
-  // GitHub Actions環境ではこの後のステップでsurgeコマンドを実行する
-  // ローカル実行時はここでsurgeも実行する
-  console.log('\n[3/5] Surgeデプロイ準備中...');
-  const deployDir = prepareSurgeDeploy(html);
-  console.log(`  → HTMLを書き出し完了: ${deployDir}`);
-
-  // GitHub Actions環境以外（ローカル）ではsurgeもここで実行
-  if (!process.env.GITHUB_ACTIONS) {
-    const surgeUrl = runSurgeLocally(deployDir);
-    if (surgeUrl) console.log(`  → デプロイ完了: ${surgeUrl}`);
-  } else {
-    console.log('  → GitHub Actions環境: surgeデプロイは後続Stepで実行されます');
-  }
+  // 3. デプロイ用HTMLを _deploy/index.html に書き出す
+  // GitHub ActionsのStepがこのファイルをgh-pagesブランチにpushする
+  console.log('\n[3/5] デプロイ用HTMLを書き出し中...');
+  const deployDir = prepareDeployDir(html);
+  console.log(`  → 書き出し完了: ${deployDir}/index.html`);
 
   // 4. スクリーンショット（Tab1 + Tab2）
   console.log('\n[4/5] スクリーンショット撮影中（サマリー + ガント）...');

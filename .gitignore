@@ -4,6 +4,7 @@ credentials.json
 token.json
 _tmp_dashboard.html
 _surge_deploy/
+_deploy/
 
 # ログ・一時ファイル
 logs/
