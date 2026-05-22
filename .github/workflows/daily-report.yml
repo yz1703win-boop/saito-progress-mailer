@@ -46,10 +46,17 @@ jobs:
       - name: surgeをインストール
         run: npm install -g surge
 
-      - name: 進捗レポートを送信
+      - name: 進捗レポートを送信（HTML生成・スクショ・メール）
         env:
           TZ: Asia/Tokyo
+          GITHUB_ACTIONS: "true"
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
         run: node sendReport.js
+
+      - name: Surgeへデプロイ
+        env:
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+        run: |
+          npx surge _surge_deploy saito-progress-dashboard.surge.sh --token $SURGE_TOKEN

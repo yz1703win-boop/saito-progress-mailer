@@ -33,35 +33,29 @@ function saveTempHtml(htmlContent) {
   return tmpPath;
 }
 
-// ── Surgeへデプロイ ───────────────────────────────
-async function deployToSurge(htmlContent) {
+// ── Surgeデプロイ用HTMLを書き出す ─────────────────
+// 実際のsurge実行はGitHub ActionsのStep（またはローカルのdeploySurge関数）で行う
+function prepareSurgeDeploy(htmlContent) {
   const deployDir = path.join(__dirname, '_surge_deploy');
   if (!fs.existsSync(deployDir)) fs.mkdirSync(deployDir);
-
-  // HTMLを index.html として保存
   fs.writeFileSync(path.join(deployDir, 'index.html'), htmlContent, 'utf8');
+  return deployDir;
+}
 
+// ── ローカル実行時のSurgeデプロイ ─────────────────
+function runSurgeLocally(deployDir) {
   const domain = config.surge?.domain || 'saito-progress-dashboard.surge.sh';
+  const token  = config.surge?.token || process.env.SURGE_TOKEN || '';
   console.log(`  → Surgeデプロイ中: ${domain}`);
-
   try {
-    execSync(`surge ${deployDir} ${domain} --token ${config.surge?.token || ''}`, {
-      timeout: 60000,
-      env: { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' },
-    });
+    const cmd = token
+      ? `surge "${deployDir}" ${domain} --token ${token}`
+      : `surge "${deployDir}" ${domain}`;
+    execSync(cmd, { timeout: 60000, stdio: 'inherit' });
     return `https://${domain}`;
   } catch (err) {
-    // tokenなしでも試みる（ログイン済みの場合）
-    try {
-      execSync(`surge ${deployDir} ${domain}`, {
-        timeout: 60000,
-        env: { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' },
-      });
-      return `https://${domain}`;
-    } catch (err2) {
-      console.warn('  ⚠️  Surgeデプロイ失敗（メール送信は続行）:', err2.message);
-      return null;
-    }
+    console.warn('  ⚠️  Surgeデプロイ失敗（メール送信は続行）:', err.message);
+    return null;
   }
 }
 
@@ -225,10 +219,20 @@ async function main() {
   const html = generateDashboard(tasks, holidays);
   console.log('  → 生成完了');
 
-  // 3. Surgeへデプロイ
-  console.log('\n[3/5] Surgeへデプロイ中...');
-  const surgeUrl = await deployToSurge(html);
-  if (surgeUrl) console.log(`  → デプロイ完了: ${surgeUrl}`);
+  // 3. Surgeデプロイ用HTMLを書き出す
+  // GitHub Actions環境ではこの後のステップでsurgeコマンドを実行する
+  // ローカル実行時はここでsurgeも実行する
+  console.log('\n[3/5] Surgeデプロイ準備中...');
+  const deployDir = prepareSurgeDeploy(html);
+  console.log(`  → HTMLを書き出し完了: ${deployDir}`);
+
+  // GitHub Actions環境以外（ローカル）ではsurgeもここで実行
+  if (!process.env.GITHUB_ACTIONS) {
+    const surgeUrl = runSurgeLocally(deployDir);
+    if (surgeUrl) console.log(`  → デプロイ完了: ${surgeUrl}`);
+  } else {
+    console.log('  → GitHub Actions環境: surgeデプロイは後続Stepで実行されます');
+  }
 
   // 4. スクリーンショット（Tab1 + Tab2）
   console.log('\n[4/5] スクリーンショット撮影中（サマリー + ガント）...');
