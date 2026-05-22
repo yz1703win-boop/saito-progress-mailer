@@ -7,12 +7,12 @@ module.exports = {
   mail: {
     from:        'yz.1703.win@gmail.com',
     to:          'dondonikudon5@gmail.com',
-    appPassword: process.env.GMAIL_APP_PASSWORD || 'sdaypurssmjvwmzi',
+    appPassword: process.env.GMAIL_APP_PASSWORD,
   },
 
   // ── Google Sheets 設定 ─────────────────────────────
   sheets: {
-    apiKey: process.env.GOOGLE_API_KEY || 'AIzaSyCb2UnJNyU1OyIGA85Yj63PNd5xCFXAioo',
+    apiKey: process.env.GOOGLE_API_KEY,
 
     // 制作シート
     seisaku: {
