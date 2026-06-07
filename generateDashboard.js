@@ -249,7 +249,7 @@ function escHtml(s) {
 function generateDashboard(tasks, holidays = []) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const twoWeekEnd  = new Date(today); twoWeekEnd.setDate(twoWeekEnd.getDate() + 14);
-  const threeDayEnd = new Date(today); threeDayEnd.setDate(threeDayEnd.getDate() + 3);
+  const threeDayEnd = new Date(today); threeDayEnd.setDate(threeDayEnd.getDate() + 7);
 
   function daysUntil(date) {
     return Math.ceil((date - today) / 86400000);
@@ -260,9 +260,9 @@ function generateDashboard(tasks, holidays = []) {
     .filter(t => t.mkSubmit && daysUntil(t.mkSubmit) <= 14)
     .sort((a, b) => a.mkSubmit - b.mkSubmit);
 
-  // 3日以内に初稿が上がるタスク（draftDate基準）
+  // 7日以内に初稿が上がるタスク（draftDate基準）
   const threeD = tasks
-    .filter(t => t.draftDate && daysUntil(t.draftDate) <= 3 && daysUntil(t.draftDate) >= 0)
+    .filter(t => t.draftDate && daysUntil(t.draftDate) <= 7 && daysUntil(t.draftDate) >= 0)
     .sort((a, b) => a.draftDate - b.draftDate);
 
   // 今日のアクション
@@ -311,7 +311,7 @@ function generateDashboard(tasks, holidays = []) {
       </div>
       <div>
         <div style="font-size:11px;font-weight:600;color:#15803d;">該当なし</div>
-        <div style="font-size:9px;color:#4ade80;">3日以内に初稿提出予定ゼロ</div>
+        <div style="font-size:9px;color:#4ade80;">7日以内に初稿提出予定ゼロ</div>
       </div></div>`;
   } else {
     threeDayListHtml = threeD.map(t => `<div style="display:flex;align-items:center;gap:10px;background:#f0fdf4;border-radius:12px;padding:8px 11px;box-shadow:0 1px 3px rgba(0,0,0,0.07);border-left:3px solid #16a34a;margin-bottom:4px;">
@@ -423,7 +423,7 @@ function generateDashboard(tasks, holidays = []) {
       <div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       </div>
-      <span style="font-size:11px;font-weight:700;color:#1e293b;">3日以内に初稿が上がるタスク</span>
+      <span style="font-size:11px;font-weight:700;color:#1e293b;">7日以内に初稿が上がるタスク</span>
       <span style="margin-left:auto;font-size:9px;color:#94a3b8;flex-shrink:0;">〜 ${fmt(threeDayEnd)}</span>
     </div>
     <div>${threeDayListHtml}</div>

@@ -240,13 +240,62 @@ async function fetchHolidays() {
   }
 }
 
+// ── 琉球キネシ 管理シートからタスクを取得 ──────────
+async function fetchRyukyuTasks() {
+  if (!config.ryukyu) return [];
+  const sheets = getSheetsClient();
+  const cfg = config.ryukyu;
+
+  const range = `${cfg.sheetName}!A${cfg.startRow}:D500`;
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: cfg.spreadsheetId,
+      range,
+    });
+    const rows = res.data.values || [];
+    const tasks = [];
+
+    rows.forEach((row, i) => {
+      const name = row[cfg.cols.taskName] ? String(row[cfg.cols.taskName]).trim() : null;
+      if (!name) return;
+
+      const deadline = parseDate(row[cfg.cols.deadline]);
+      if (!deadline) return; // 期限がない行はスキップ
+
+      const cat = guessCategory(name);
+      const type = guessType(name);
+
+      tasks.push({
+        id:        `ryukyu_${i + 1}`,
+        name,
+        sub:       '琉球キネシ',
+        type,
+        cat,
+        dot:       DOT_COLORS[cat] || '#94a3b8',
+        mkSubmit:  deadline,
+        draftDate: deadline,
+        publicDate: deadline,
+        source:    'ryukyu',
+      });
+    });
+
+    console.log(`  → 琉球キネシ: ${tasks.length}件取得`);
+    return tasks;
+  } catch (e) {
+    console.warn('  ⚠️  琉球キネシシート取得失敗（スキップ）:', e.message);
+    return [];
+  }
+}
+
 // ── メイン取得関数 ────────────────────────────────
 async function fetchAllData() {
-  const [tasks, holidays] = await Promise.all([
+  const [tasks, ryukyuTasks, holidays] = await Promise.all([
     fetchTasks(),
+    fetchRyukyuTasks(),
     fetchHolidays(),
   ]);
-  return { tasks, holidays };
+  const allTasks = [...tasks, ...ryukyuTasks];
+  return { tasks: allTasks, holidays };
 }
 
 // 依存モジュールで使う addBD の仮宣言（循環参照回避）

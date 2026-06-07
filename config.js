@@ -45,6 +45,17 @@ module.exports = {
     ganttEndDate: new Date(2026, 6, 10),
   },
 
+  // ── 追加ソース：琉球キネシ 管理シート ─────────────
+  ryukyu: {
+    spreadsheetId: '1LMF_k-4TW5NAsOLDoOQGG6pSewD_mSGZrvpdsdIWZyQ',
+    sheetName: '各種タスク進捗',
+    startRow: 2,   // 1行目はヘッダー
+    cols: {
+      taskName: 0, // A列 タスク名
+      deadline: 1, // B列 期限（入稿日として扱う）
+    }
+  },
+
   // ── GitHub Pages デプロイ設定 ─────────────────────
   pages: {
     url: 'https://yz1703win-boop.github.io/saito-progress-mailer/',
