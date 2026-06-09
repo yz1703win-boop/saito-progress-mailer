@@ -53,6 +53,7 @@ module.exports = {
     cols: {
       taskName: 0, // A列 タスク名
       deadline: 1, // B列 期限（入稿日として扱う）
+      time:     2, // C列 時間（例: 10:00, 終日）
     }
   },
 

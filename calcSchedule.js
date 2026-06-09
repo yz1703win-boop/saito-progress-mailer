@@ -175,6 +175,12 @@ function fmtFull(date) {
   return `${y}/${m}/${d}`;
 }
 
+function fmtWithTime(date, time) {
+  const dateStr = fmt(date);
+  if (!dateStr) return '';
+  return time ? `${dateStr} ${time}` : dateStr;
+}
+
 module.exports = {
   isBusinessDay,
   addBD,
@@ -184,4 +190,5 @@ module.exports = {
   getTodayActions,
   fmt,
   fmtFull,
+  fmtWithTime,
 };

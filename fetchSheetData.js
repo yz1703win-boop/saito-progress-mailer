@@ -65,6 +65,26 @@ function parseDate(val) {
   return null;
 }
 
+// ── 時間文字列を表示用に正規化 ────────────────────
+function formatTime(val) {
+  if (val === undefined || val === null || String(val).trim() === '') return null;
+  const str = String(val).trim();
+  if (str === '終日') return '終日';
+
+  const m = str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (m) return `${+m[1]}:${m[2]}`;
+
+  const num = parseFloat(str);
+  if (!isNaN(num) && num >= 0 && num < 1) {
+    const totalMins = Math.round(num * 24 * 60);
+    const h = Math.floor(totalMins / 60);
+    const min = totalMins % 60;
+    return `${h}:${String(min).padStart(2, '0')}`;
+  }
+
+  return str;
+}
+
 // ── カテゴリ自動推定（タスク名から判定）────────────
 function guessCategory(name) {
   if (!name) return 'その他';
@@ -262,6 +282,8 @@ async function fetchRyukyuTasks() {
       const deadline = parseDate(row[cfg.cols.deadline]);
       if (!deadline) return; // 期限がない行はスキップ
 
+      const time = cfg.cols.time >= 0 ? formatTime(row[cfg.cols.time]) : null;
+
       const cat = guessCategory(name);
       const type = guessType(name);
 
@@ -275,6 +297,7 @@ async function fetchRyukyuTasks() {
         mkSubmit:  deadline,
         draftDate: deadline,
         publicDate: deadline,
+        time,
         source:    'ryukyu',
       });
     });

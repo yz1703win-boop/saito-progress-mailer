@@ -3,7 +3,7 @@
 // 既存 index.html のデザインを継承し、タスクデータを動的注入
 // =====================================================
 
-const { calcFullSchedule, getTodayActions, fmt, fmtFull, addBD } = require('./calcSchedule');
+const { calcFullSchedule, getTodayActions, fmt, fmtFull, fmtWithTime, addBD } = require('./calcSchedule');
 const config = require('./config');
 
 const CAT_COLORS = {
@@ -63,7 +63,7 @@ function taskCardHtml(task, dateToShow, days) {
       <span style="font-size:7px;background:${cc.bg};color:${cc.text};border:1px solid ${cc.border};border-radius:3px;padding:0 3px;">${escHtml(task.cat)}</span>
     </div>
     ${task.sub ? `<span style="font-size:9px;color:#64748b;flex-shrink:0;">${escHtml(task.sub)}</span>` : ''}
-    <span style="font-size:11px;font-weight:700;color:${s.badge};flex-shrink:0;">${fmt(dateToShow)}</span>
+    <span style="font-size:11px;font-weight:700;color:${s.badge};flex-shrink:0;">${fmtWithTime(dateToShow, task.time)}</span>
     <span style="font-size:8px;font-weight:700;padding:2px 5px;border-radius:999px;background:${s.badgeBg};color:${s.badge};flex-shrink:0;">${s.label}</span>
   </div>`;
 }
@@ -203,7 +203,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
             <span style="width:3px;height:34px;border-radius:2px;background:${task.dot};flex-shrink:0;"></span>
             <div style="min-width:0;flex:1;">
               <div style="font-size:7.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:76px;">${escHtml(task.name)}</div>
-              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;">${escHtml(task.sub || '')}</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;">${escHtml(task.sub || '')}${task.time ? ` · ${escHtml(task.time)}` : ''}</div>
               <div style="display:flex;gap:2px;flex-wrap:wrap;">
                 <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
                 <span style="font-size:6px;background:${prdBg};color:${prdColor};border-radius:2px;padding:0 3px;line-height:1.5;">${prdLabel}</span>
@@ -279,13 +279,13 @@ function generateDashboard(tasks, holidays = []) {
   } else if (twoW.filter(t => daysUntil(t.mkSubmit) <= 7).length > 0) {
     const urgents = twoW.filter(t => daysUntil(t.mkSubmit) <= 7);
     const lines = urgents.slice(0, 3).map(t =>
-      `✦ ${escHtml(t.name)}（${fmt(t.mkSubmit)}入稿）`
+      `✦ ${escHtml(t.name)}（${fmtWithTime(t.mkSubmit, t.time)}入稿）`
     ).join('<br>');
     catMsg = `<span style="color:#d97706;font-weight:700;">急ぎ${urgents.length}件！</span>原稿作成・上長FBを済ませて提出にゃ！<br>${lines}`;
   } else {
     const next = [...tasks].sort((a, b) => a.mkSubmit - b.mkSubmit).find(t => daysUntil(t.mkSubmit) > 0);
     catTitle = '🐱 次の入稿に向けて準備を！';
-    catMsg = `今は余裕があるにゃ！でも<span style="color:#d97706;font-weight:700;">${next ? fmt(next.mkSubmit) + 'の' + escHtml(next.name) : '次のタスク'}</span>に向けて原稿準備を進めておくと安心にゃ！`;
+    catMsg = `今は余裕があるにゃ！でも<span style="color:#d97706;font-weight:700;">${next ? fmtWithTime(next.mkSubmit, next.time) + 'の' + escHtml(next.name) : '次のタスク'}</span>に向けて原稿準備を進めておくと安心にゃ！`;
   }
 
   // 2週間リストHTML
@@ -296,7 +296,7 @@ function generateDashboard(tasks, holidays = []) {
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       <div>
         <div style="font-size:11px;font-weight:600;color:#64748b;">現在該当なし</div>
-        <div style="font-size:9px;color:#94a3b8;">次の入稿: ${next ? fmt(next.mkSubmit) + '（' + escHtml(next.name) + '）' : 'なし'}</div>
+        <div style="font-size:9px;color:#94a3b8;">次の入稿: ${next ? fmtWithTime(next.mkSubmit, next.time) + '（' + escHtml(next.name) + '）' : 'なし'}</div>
       </div></div>`;
   } else {
     twoWeekListHtml = twoW.map(t => taskCardHtml(t, t.mkSubmit, daysUntil(t.mkSubmit))).join('');
@@ -318,7 +318,7 @@ function generateDashboard(tasks, holidays = []) {
       <span style="width:7px;height:7px;border-radius:50%;background:${t.dot};flex-shrink:0;"></span>
       <span style="flex:1;font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.name)}</span>
       ${t.sub ? `<span style="font-size:9px;color:#64748b;">${escHtml(t.sub)}</span>` : ''}
-      <span style="font-size:11px;font-weight:700;color:#16a34a;margin:0 4px;">${fmt(t.draftDate)}</span>
+      <span style="font-size:11px;font-weight:700;color:#16a34a;margin:0 4px;">${fmtWithTime(t.draftDate, t.time)}</span>
       <span style="font-size:8px;font-weight:700;padding:2px 5px;border-radius:999px;background:#dcfce7;color:#16a34a;border:1px solid #86efac;">残${daysUntil(t.draftDate)}日</span>
     </div>`).join('');
   }
