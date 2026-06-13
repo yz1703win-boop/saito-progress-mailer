@@ -139,7 +139,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
     }
     markDay(prd, ganttIdx(sched.publicDate), 'submit');
 
-    return { mrk, prd };
+    return { mrk, prd, sched };
   }
 
   // ── 月ヘッダー ──
@@ -173,6 +173,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
   html += '</tr></thead><tbody>';
 
   // ── タスク行 ──
+  const popupDataList = [];
   CAT_ORDER.forEach(cat => {
     const catTasks = tasks.filter(t => t.cat === cat);
     if (catTasks.length === 0) return;
@@ -188,7 +189,20 @@ function buildGanttHtml(tasks, extraHolidays, today) {
     html += '</tr>';
 
     catTasks.forEach((task, ti) => {
-      const { mrk, prd } = calcPhases(task);
+      const { mrk, prd, sched } = calcPhases(task);
+      const popupIdx = popupDataList.length;
+      const ccPopup = CAT_COLORS[task.cat] || CAT_COLORS['その他'];
+      popupDataList.push({
+        name: task.name,
+        sub: task.sub || '',
+        cat: task.cat,
+        dot: task.dot,
+        mkSubmit: sched.mkSubmit ? fmt(sched.mkSubmit) : '',
+        publicDate: sched.publicDate ? fmt(sched.publicDate) : '',
+        catBg: ccPopup.bg,
+        catText: ccPopup.text,
+        catBorder: ccPopup.border,
+      });
       // タスク毎に背景色を交互に変えて視認性アップ
       const rowBg     = ti % 2 === 0 ? '#ffffff' : '#eef4ff';
       const rowBgCell = ti % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(238,244,255,0.6)';
@@ -198,12 +212,12 @@ function buildGanttHtml(tasks, extraHolidays, today) {
 
       // マーケ行
       html += `<tr style="background:${rowBg};">
-        <td style="position:sticky;left:0;z-index:10;background:${rowBg};height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;" rowspan="2">
-          <div style="display:flex;align-items:center;gap:3px;padding:1px 0;">
-            <span style="width:3px;height:34px;border-radius:2px;background:${task.dot};flex-shrink:0;"></span>
+        <td style="position:sticky;left:0;z-index:10;background:${rowBg};min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(${popupIdx})">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:${task.dot};flex-shrink:0;align-self:stretch;"></span>
             <div style="min-width:0;flex:1;">
-              <div style="font-size:7.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:76px;">${escHtml(task.name)}</div>
-              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;">${escHtml(task.sub || '')}${task.time ? ` · ${escHtml(task.time)}` : ''}</div>
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">${escHtml(task.name)}</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">${escHtml(task.sub || '')}${task.time ? ` · ${escHtml(task.time)}` : ''}</div>
               <div style="display:flex;gap:2px;flex-wrap:wrap;">
                 <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
                 <span style="font-size:6px;background:${prdBg};color:${prdColor};border-radius:2px;padding:0 3px;line-height:1.5;">${prdLabel}</span>
@@ -233,7 +247,7 @@ function buildGanttHtml(tasks, extraHolidays, today) {
   });
 
   html += '</tbody></table>';
-  return html;
+  return { html, popupDataList };
 }
 
 // ── HTMLエスケープ ────────────────────────────────
@@ -324,7 +338,7 @@ function generateDashboard(tasks, holidays = []) {
   }
 
   // ガントチャート
-  const ganttHtml = buildGanttHtml(tasks, holidays, today);
+  const { html: ganttHtml, popupDataList } = buildGanttHtml(tasks, holidays, today);
 
   // 今日のガントインデックス（スクロール位置用）
   const GANTT_START_FOR_JS = new Date(today); GANTT_START_FOR_JS.setDate(GANTT_START_FOR_JS.getDate() - 14);
@@ -473,6 +487,19 @@ function generateDashboard(tasks, holidays = []) {
   </div>
 </div>
 
+<!-- ════════ GANTT POPUP ════════ -->
+<div id="gantt-overlay" onclick="closeGanttPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;"></div>
+<div id="gantt-popup" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:white;border-radius:20px 20px 0 0;padding:16px 16px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+  <div style="width:36px;height:4px;border-radius:2px;background:#e2e8f0;margin:0 auto 14px;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+    <div id="popup-header" style="flex:1;min-width:0;padding-right:8px;"></div>
+    <button onclick="closeGanttPopup()" style="flex-shrink:0;width:28px;height:28px;background:#f1f5f9;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="popup-body"></div>
+</div>
+
 <!-- ══════════════ TAB 3 ══════════════ -->
 <div id="tab3" class="tab-panel" style="background:#f0f4f8;">
   <div style="flex-shrink:0;padding:10px 14px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
@@ -492,6 +519,43 @@ function generateDashboard(tasks, holidays = []) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+const GANTT_TASKS = ${JSON.stringify(popupDataList)};
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function showGanttPopup(idx){
+  const t = GANTT_TASKS[idx];
+  document.getElementById('popup-header').innerHTML =
+    '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+      '<span style="width:10px;height:10px;border-radius:50%;background:'+t.dot+';flex-shrink:0;margin-top:3px;"></span>' +
+      '<div style="min-width:0;">' +
+        '<div style="font-size:15px;font-weight:700;color:#1e293b;line-height:1.4;overflow-wrap:break-word;">' + esc(t.name) + '</div>' +
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">' +
+          '<span style="font-size:9px;padding:1px 8px;border-radius:999px;background:'+t.catBg+';color:'+t.catText+';border:1px solid '+t.catBorder+';">' + esc(t.cat) + '</span>' +
+          (t.sub ? '<span style="font-size:9px;color:#64748b;padding-top:1px;">' + esc(t.sub) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('popup-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+      '<div style="background:#fef3c7;border-radius:12px;padding:12px 14px;">' +
+        '<div style="font-size:9px;color:#92400e;font-weight:700;margin-bottom:5px;">📅 入稿日</div>' +
+        '<div style="font-size:15px;font-weight:800;color:#92400e;">' + (t.mkSubmit || '—') + '</div>' +
+      '</div>' +
+      '<div style="background:#dbeafe;border-radius:12px;padding:12px 14px;">' +
+        '<div style="font-size:9px;color:#1d4ed8;font-weight:700;margin-bottom:5px;">🚀 納品/公開日</div>' +
+        '<div style="font-size:15px;font-weight:800;color:#1d4ed8;">' + (t.publicDate || '—') + '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('gantt-overlay').style.display = 'block';
+  document.getElementById('gantt-popup').style.display = 'block';
+}
+
+function closeGanttPopup(){
+  document.getElementById('gantt-overlay').style.display = 'none';
+  document.getElementById('gantt-popup').style.display = 'none';
+}
+
 function showTab(n){
   [1,2,3].forEach(i=>{
     document.getElementById('tab'+i).classList.toggle('active',i===n);
