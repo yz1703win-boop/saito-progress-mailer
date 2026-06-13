@@ -401,24 +401,25 @@ function generateDashboard(tasks, holidays = []) {
 </div>
 
 <!-- ══════════════ TAB 1 ══════════════ -->
-<div id="tab1" class="tab-panel active" style="padding:9px 13px;gap:7px;background:#f0f4f8;">
+<div id="tab1" class="tab-panel active" style="background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div style="padding:9px 13px;display:flex;flex-direction:column;gap:7px;">
 
   <!-- 2週間以内 -->
-  <section style="flex:1;display:flex;flex-direction:column;min-height:0;">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-shrink:0;">
+  <section>
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
       <div style="width:22px;height:22px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <span style="font-size:11px;font-weight:700;color:#1e293b;">2週間以内に入稿を迎えるタスク</span>
       <span style="margin-left:auto;font-size:9px;color:#94a3b8;flex-shrink:0;">〜 ${fmt(twoWeekEnd)}</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;overflow-y:auto;">${twoWeekListHtml}</div>
+    <div style="display:flex;flex-direction:column;gap:5px;">${twoWeekListHtml}</div>
   </section>
 
-  <div style="height:1px;background:#e2e8f0;flex-shrink:0;"></div>
+  <div style="height:1px;background:#e2e8f0;"></div>
 
   <!-- 3日以内初稿 -->
-  <section style="flex-shrink:0;">
+  <section>
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
       <div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -429,10 +430,10 @@ function generateDashboard(tasks, holidays = []) {
     <div>${threeDayListHtml}</div>
   </section>
 
-  <div style="height:1px;background:#e2e8f0;flex-shrink:0;"></div>
+  <div style="height:1px;background:#e2e8f0;"></div>
 
   <!-- 猫コメント -->
-  <div style="flex-shrink:0;display:flex;align-items:center;gap:9px;padding:7px 10px;background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+  <div style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
     ${CAT_SVG}
     <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 9px;position:relative;">
       <div class="bubble-ptr"></div>
@@ -441,6 +442,7 @@ function generateDashboard(tasks, holidays = []) {
     </div>
   </div>
 
+  </div>
 </div>
 
 <!-- ══════════════ TAB 2 ══════════════ -->
