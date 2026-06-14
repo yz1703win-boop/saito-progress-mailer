@@ -28,6 +28,16 @@ module.exports = {
         category:    -1,
         assignee:    -1,
         type:        -1,
+        // 明示的スケジュール列（シートに実際の日付が入っている場合）
+        draftSubmit:  31,  // AF列 初稿提出日
+        draftFb:      34,  // AI列 初稿FB日
+        rev2Submit:   37,  // AL列 ２稿提出日
+        rev2Fb:       40,  // AO列 ２稿FB日
+        rev3Submit:   43,  // AR列 ３稿提出日
+        rev3Fb:       46,  // AU列 ３稿FB日
+        rev4Submit:   49,  // AX列 ４稿提出日
+        delivery:     51,  // AZ列 納品日
+        publicActual: 54,  // BC列 公開/発注日
       }
     },
 

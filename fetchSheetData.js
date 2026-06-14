@@ -171,6 +171,27 @@ async function fetchTasks() {
       ? (String(row[cfg.cols.type]).includes('動画') ? 'vid' : 'dsn')
       : guessType(name);
 
+    // 明示的スケジュール列の読み取り（シートに実際の稿日程が入っている場合）
+    const ec = cfg.cols;
+    const explicitDates = {};
+    const tryDate = (key, col) => {
+      if (col == null || col < 0) return;
+      const d = parseDate(row[col]);
+      if (d) explicitDates[key] = d;
+    };
+    tryDate('draftSubmit',  ec.draftSubmit);
+    tryDate('draftFb',      ec.draftFb);
+    tryDate('rev2Submit',   ec.rev2Submit);
+    tryDate('rev2Fb',       ec.rev2Fb);
+    tryDate('rev3Submit',   ec.rev3Submit);
+    tryDate('rev3Fb',       ec.rev3Fb);
+    tryDate('rev4Submit',   ec.rev4Submit);
+    tryDate('delivery',     ec.delivery);
+    tryDate('publicActual', ec.publicActual);
+
+    // 実際の公開日があれば publicDate に使用
+    const actualPublicDate = explicitDates.publicActual || explicitDates.delivery || null;
+
     tasks.push({
       id:        i + 1,
       name,
@@ -180,7 +201,8 @@ async function fetchTasks() {
       dot:       DOT_COLORS[category] || '#94a3b8',
       mkSubmit,
       draftDate: effectiveDraft,
-      publicDate,
+      publicDate: actualPublicDate || publicDate,
+      explicitDates: Object.keys(explicitDates).length > 0 ? explicitDates : null,
     });
   });
 

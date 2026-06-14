@@ -128,16 +128,39 @@ function buildGanttHtml(tasks, extraHolidays, today) {
     markDay(mrk, ganttIdx(sched.mkSubmit),      'mk_sub');   // 提出
 
     // ── クリエイター行 ────────────────────────────
-    markRange(prd, sched.draftStart, sched.draftEnd, 'init');
-    markDay(prd, ganttIdx(sched.prdFb1),  'fb1');
-    markDay(prd, ganttIdx(sched.prdRev2), 'rev2');
-    markDay(prd, ganttIdx(sched.prdFb2),  'fb2');
-    markDay(prd, ganttIdx(sched.prdRev3), 'rev3');
-    markDay(prd, ganttIdx(sched.prdFb3),  'fb3');
-    if (sched.prdFinalStart <= sched.prdFinalEnd) {
-      markRange(prd, sched.prdFinalStart, sched.prdFinalEnd, 'final');
+    const ed = task.explicitDates;
+    if (ed && ed.draftSubmit) {
+      // シートに実際の稿日程がある場合はそれを使用
+      const nextDay = d => new Date(d.getTime() + 86400000);
+      markRange(prd, task.mkSubmit, ed.draftSubmit, 'init');             // 初稿制作
+      if (ed.draftFb)    markDay(prd, ganttIdx(ed.draftFb), 'fb1');      // 初稿FB
+      if (ed.draftFb && ed.rev2Submit)
+        markRange(prd, nextDay(ed.draftFb), ed.rev2Submit, 'rev2');      // ２稿制作
+      if (ed.rev2Fb)     markDay(prd, ganttIdx(ed.rev2Fb), 'fb2');       // ２稿FB
+      if (ed.rev2Fb && ed.rev3Submit)
+        markRange(prd, nextDay(ed.rev2Fb), ed.rev3Submit, 'rev3');       // ３稿制作
+      if (ed.rev3Fb)     markDay(prd, ganttIdx(ed.rev3Fb), 'fb3');       // ３稿FB
+      // ４稿以降は 'final' で表示
+      const finalEnd = ed.rev4Submit || ed.delivery;
+      const finalStart = ed.rev3Fb ? nextDay(ed.rev3Fb) : (ed.rev3Submit ? nextDay(ed.rev3Submit) : null);
+      if (finalStart && finalEnd && finalStart <= finalEnd)
+        markRange(prd, finalStart, finalEnd, 'final');
+      // 公開/納品日
+      const submitDate = ed.publicActual || ed.delivery || ed.rev4Submit;
+      if (submitDate) markDay(prd, ganttIdx(submitDate), 'submit');
+    } else {
+      // 既存の計算スケジュール
+      markRange(prd, sched.draftStart, sched.draftEnd, 'init');
+      markDay(prd, ganttIdx(sched.prdFb1),  'fb1');
+      markDay(prd, ganttIdx(sched.prdRev2), 'rev2');
+      markDay(prd, ganttIdx(sched.prdFb2),  'fb2');
+      markDay(prd, ganttIdx(sched.prdRev3), 'rev3');
+      markDay(prd, ganttIdx(sched.prdFb3),  'fb3');
+      if (sched.prdFinalStart <= sched.prdFinalEnd) {
+        markRange(prd, sched.prdFinalStart, sched.prdFinalEnd, 'final');
+      }
+      markDay(prd, ganttIdx(sched.publicDate), 'submit');
     }
-    markDay(prd, ganttIdx(sched.publicDate), 'submit');
 
     return { mrk, prd, sched };
   }
@@ -198,7 +221,11 @@ function buildGanttHtml(tasks, extraHolidays, today) {
         cat: task.cat,
         dot: task.dot,
         mkSubmit: sched.mkSubmit ? fmt(sched.mkSubmit) : '',
-        publicDate: sched.publicDate ? fmt(sched.publicDate) : '',
+        publicDate: (task.explicitDates && task.explicitDates.publicActual)
+          ? fmt(task.explicitDates.publicActual)
+          : (task.explicitDates && task.explicitDates.delivery)
+            ? fmt(task.explicitDates.delivery)
+            : (sched.publicDate ? fmt(sched.publicDate) : ''),
         catBg: ccPopup.bg,
         catText: ccPopup.text,
         catBorder: ccPopup.border,
