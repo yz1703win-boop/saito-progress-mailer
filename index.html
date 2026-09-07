@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>進捗レポート｜齋藤慶太先生 体験会プロモーション</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #f0f4f8;
+      color: #1e293b;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+    .gantt-wrap { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
+    .bubble-ptr {
+      position: absolute; left: -7px; top: 50%; transform: translateY(-50%);
+      border: 7px solid transparent; border-right-color: #e2e8f0;
+    }
+    .bubble-ptr::after {
+      content: ''; position: absolute; left: 2px; top: -6px;
+      border: 6px solid transparent; border-right-color: white;
+    }
+    #png-canvas-wrap { overflow: auto; flex: 1; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ════════ HEADER ════════ -->
+<header style="background:white;border-bottom:1px solid #e2e8f0;padding:9px 14px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+  <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+    <div style="width:30px;height:30px;border-radius:7px;background:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <div style="font-size:9px;color:#94a3b8;">プロジェクト進捗レポート</div>
+      <div style="font-size:12px;font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">齋藤慶太先生 体験会プロモーション</div>
+    </div>
+  </div>
+  <div style="text-align:right;flex-shrink:0;">
+    <div style="font-size:9px;color:#94a3b8;">生成日</div>
+    <div style="font-size:11px;font-weight:600;color:#334155;">2026/09/07</div>
+  </div>
+</header>
+
+<!-- ════════ TAB NAV ════════ -->
+<div style="background:white;border-bottom:2px solid #e2e8f0;display:flex;flex-shrink:0;">
+  <button id="btn1" onclick="showTab(1)" style="flex:1;padding:8px 4px;font-size:10px;font-weight:600;color:#2563eb;background:none;border:none;border-bottom:2px solid #2563eb;margin-bottom:-2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>
+    進捗サマリー
+  </button>
+  <button id="btn2" onclick="showTab(2)" style="flex:1;padding:8px 4px;font-size:10px;font-weight:600;color:#94a3b8;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    ガントチャート
+  </button>
+  <button id="btn3" onclick="showTab(3)" style="flex:1;padding:8px 4px;font-size:10px;font-weight:600;color:#94a3b8;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 20M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+    PNG保存
+  </button>
+</div>
+
+<!-- ══════════════ TAB 1 ══════════════ -->
+<div id="tab1" class="tab-panel active" style="background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div style="padding:9px 13px;display:flex;flex-direction:column;gap:7px;">
+
+  <!-- 2週間以内 -->
+  <section>
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#1e293b;">2週間以内に入稿を迎えるタスク</span>
+      <span style="margin-left:auto;font-size:9px;color:#94a3b8;flex-shrink:0;">〜 9/21</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;"><div style="display:flex;align-items:center;gap:9px;background:white;border:1px dashed #cbd5e1;border-radius:11px;padding:10px 12px;">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#64748b;">現在該当なし</div>
+        <div style="font-size:9px;color:#94a3b8;">次の入稿: 5/7（先生の紹介画像）</div>
+      </div></div></div>
+  </section>
+
+  <div style="height:1px;background:#e2e8f0;"></div>
+
+  <!-- 3日以内初稿 -->
+  <section>
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#1e293b;">7日以内に初稿が上がるタスク</span>
+      <span style="margin-left:auto;font-size:9px;color:#94a3b8;flex-shrink:0;">〜 9/14</span>
+    </div>
+    <div><div style="display:flex;align-items:center;gap:9px;background:#f0fdf4;border:1px dashed #86efac;border-radius:10px;padding:9px 12px;">
+      <div style="width:24px;height:24px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#15803d;">該当なし</div>
+        <div style="font-size:9px;color:#4ade80;">7日以内に初稿提出予定ゼロ</div>
+      </div></div></div>
+  </section>
+
+  <div style="height:1px;background:#e2e8f0;"></div>
+
+  <!-- 猫コメント -->
+  <div style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <svg viewBox="0 0 64 72" width="44" height="50" style="flex-shrink:0;">
+  <ellipse cx="32" cy="64" rx="20" ry="9" fill="#f5f0ec"/>
+  <path d="M14,58 Q20,52 32,54 Q44,52 50,58 Q44,65 32,67 Q20,65 14,58Z" fill="#fffdf8"/>
+  <path d="M10,47 Q8,34 15,25 Q22,14 32,13 Q42,14 49,25 Q56,34 54,47 Q51,58 45,62 Q38,66 32,66 Q26,66 19,62 Q13,58 10,47Z" fill="#d0c5ae"/>
+  <ellipse cx="21" cy="37" rx="9" ry="8" fill="#c97828" opacity="0.72"/>
+  <path d="M9,47 Q13,41 21,45 Q19,53 13,53 Q9,51 9,47Z" fill="#c97828" opacity="0.58"/>
+  <ellipse cx="43" cy="34" rx="7" ry="6" fill="#8a8a8a" opacity="0.4"/>
+  <polygon points="11,34 3,11 23,26" fill="#d0c5ae"/>
+  <polygon points="13,33 7,15 23,28" fill="#e8a0b0" opacity="0.5"/>
+  <polygon points="53,34 61,11 41,26" fill="#d0c5ae"/>
+  <polygon points="51,33 57,15 41,28" fill="#e8a0b0" opacity="0.5"/>
+  <ellipse cx="23" cy="44" rx="7" ry="6.5" fill="#2e6e24"/>
+  <ellipse cx="41" cy="44" rx="7" ry="6.5" fill="#2e6e24"/>
+  <ellipse cx="23" cy="44" rx="2.5" ry="5.5" fill="#0d0d0d"/>
+  <ellipse cx="41" cy="44" rx="2.5" ry="5.5" fill="#0d0d0d"/>
+  <ellipse cx="25" cy="41" rx="1.8" ry="1.3" fill="white" opacity="0.9"/>
+  <ellipse cx="43" cy="41" rx="1.8" ry="1.3" fill="white" opacity="0.9"/>
+  <path d="M29.5,52 L32,55.5 L34.5,52 Q32,50 29.5,52Z" fill="#e06070"/>
+  <path d="M29,56 Q32,60 35,56" stroke="#b04858" stroke-width="0.9" fill="none"/>
+  <line x1="1" y1="50" x2="24" y2="52" stroke="#c0b8a4" stroke-width="0.6" opacity="0.75"/>
+  <line x1="1" y1="54" x2="24" y2="55" stroke="#c0b8a4" stroke-width="0.6" opacity="0.75"/>
+  <line x1="40" y1="52" x2="63" y2="50" stroke="#c0b8a4" stroke-width="0.6" opacity="0.75"/>
+  <line x1="40" y1="55" x2="63" y2="54" stroke="#c0b8a4" stroke-width="0.6" opacity="0.75"/>
+</svg>
+    <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 9px;position:relative;">
+      <div class="bubble-ptr"></div>
+      <div style="font-size:9px;color:#d97706;font-weight:700;margin-bottom:3px;">🐱 次の入稿に向けて準備を！</div>
+      <div style="font-size:9px;color:#334155;line-height:1.6;">今は余裕があるにゃ！でも<span style="color:#d97706;font-weight:700;">5/7の先生の紹介画像</span>に向けて原稿準備を進めておくと安心にゃ！</div>
+    </div>
+  </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ TAB 2 ══════════════ -->
+<div id="tab2" class="tab-panel" style="background:#f0f4f8;">
+  <div style="flex-shrink:0;padding:5px 10px;border-bottom:1px solid #e2e8f0;background:white;display:flex;flex-wrap:wrap;gap:5px;align-items:center;">
+    <span style="font-size:8px;color:#7c3aed;font-weight:700;">マーケ行：</span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#7c3aed;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">初（初稿3BD）</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#db2777;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">FB（上長FB）</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#9333ea;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">修（修正稿）</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#6d28d9;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">終（最終調整）</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#4c1d95;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">提（提出）</span></span>
+    <span style="font-size:8px;color:#2563eb;margin-left:4px;font-weight:700;">制作行：</span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#2563eb;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">初稿</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#4338ca;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">初稿FB</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#0284c7;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">2稿</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#6d28d9;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">2稿FB</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#047857;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">3稿</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#b45309;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">3稿FB</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#c2410c;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">最終調整</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:#b91c1c;display:inline-block;"></span><span style="font-size:7.5px;color:#475569;">入稿</span></span>
+    <span style="display:flex;align-items:center;gap:2px;"><span style="width:9px;height:9px;border-radius:2px;background:rgba(37,99,235,0.2);border:1px solid #93c5fd;display:inline-block;"></span><span style="font-size:7.5px;color:#2563eb;">今日</span></span>
+  </div>
+  <div class="gantt-wrap" id="gantt-wrap" style="overflow:auto;flex:1;">
+    <table style="border-collapse:collapse;table-layout:fixed;" id="gantt-table"><thead style="position:sticky;top:0;z-index:12;"><tr><th style="position:sticky;left:0;z-index:13;background:#f1f5f9;min-width:90px;max-width:90px;padding:0 4px;text-align:left;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;font-size:8px;color:#64748b;height:14px;" rowspan="2">タスク</th><th colspan="0" style="width:20px;min-width:20px;background:#dbeafe;color:#1d4ed8;font-size:8px;font-weight:700;height:14px;border:1px solid #e2e8f0;text-align:center;">0月</th></tr><tr></tr></thead><tbody><tr><td style="position:sticky;left:0;z-index:10;background:#fef2f2;color:#991b1b;border:1px solid #e2e8f0;border-right:2px solid #fca5a5;padding:2px 6px;font-size:8px;font-weight:700;text-align:left;">DM・印刷物</td></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(0)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#ef4444;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">DMチラシ</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr><td style="position:sticky;left:0;z-index:10;background:#fff7ed;color:#9a3412;border:1px solid #e2e8f0;border-right:2px solid #fdba74;padding:2px 6px;font-size:8px;font-weight:700;text-align:left;">オプトイン</td></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(1)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#f97316;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">OGP画像</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(2)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#f97316;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">広告バナー 展開【広告課⇔マーケ】</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(3)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#f97316;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">オプトインページ（ハウス）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(4)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#f97316;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">ゴッドハンド通信用バナー</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(5)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#f97316;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">LINEバナー（LINEクリエイティブ）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr><td style="position:sticky;left:0;z-index:10;background:#f5f3ff;color:#5b21b6;border:1px solid #e2e8f0;border-right:2px solid #c4b5fd;padding:2px 6px;font-size:8px;font-weight:700;text-align:left;">レター・BE</td></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(6)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#8b5cf6;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">セトルメントページ【広告課⇔マーケ】</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(7)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#8b5cf6;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">プレゼントページ・コメント特典ページ</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(8)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#8b5cf6;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">LINEブリッジページ</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(9)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#8b5cf6;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">セールスレター</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(10)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#8b5cf6;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">Q&amp;Aページ（よくある質問）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr><td style="position:sticky;left:0;z-index:10;background:#f0fdf4;color:#065f46;border:1px solid #e2e8f0;border-right:2px solid #6ee7b7;padding:2px 6px;font-size:8px;font-weight:700;text-align:left;">動画</td></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(11)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">オプトイン映像用スライド</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(12)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">オプトイン動画（〜45分）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(13)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">OP映像（1分）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(14)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">切り抜き動画広告 1陣（5本）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(15)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">新規動画広告①（漫画）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(16)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">切り抜き動画広告 2陣（5本）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(17)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">新規動画広告②</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(18)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">コメント特典動画</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(19)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">LINE特典動画</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(20)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">オプトインページ（広告）埋め込み用mp4動画</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(21)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">オプトインページ（ハウス）埋め込み用mp4動画</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(22)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">バックエンド募集動画（〜30分）
+体験会誘導動画（〜15分）</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(23)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#10b981;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">BE募集動画スライド</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 10:00</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#f0fdf4;color:#065f46;border-radius:2px;padding:0 3px;line-height:1.5;">動画</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr><td style="position:sticky;left:0;z-index:10;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;padding:2px 6px;font-size:8px;font-weight:700;text-align:left;">その他</td></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(24)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">先生の紹介画像</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(25)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">バックエンド用スライド
+体験会募集スライド</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;"></div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(26)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">ストーリーライン作成</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(27)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">Youtube Live構成作成</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(28)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">号外訴求作成</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(29)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">号外1通目作成</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(30)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">OPTスライド完パケ</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 10:00</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(31)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">Liveスライド</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 10:00</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(32)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">特典モックアップ</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr><tr style="background:#eef4ff;">
+        <td style="position:sticky;left:0;z-index:10;background:#eef4ff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(33)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">かご落ち対策SL</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 終日</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#eef4ff;"></tr><tr style="background:#ffffff;">
+        <td style="position:sticky;left:0;z-index:10;background:#ffffff;min-height:42px;vertical-align:middle;border:1px solid #e2e8f0;border-right:2px solid #cbd5e1;border-top:2px solid #cbd5e1;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,0.08);" rowspan="2" onclick="showGanttPopup(34)">
+          <div style="display:flex;align-items:flex-start;gap:3px;padding:2px 0;">
+            <span style="width:3px;min-height:34px;border-radius:2px;background:#94a3b8;flex-shrink:0;align-self:stretch;"></span>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:7.5px;font-weight:700;color:#1e293b;overflow-wrap:break-word;word-break:break-all;line-height:1.4;">かご落ち対策メール2通</div>
+              <div style="font-size:6.5px;color:#94a3b8;margin-bottom:1px;overflow-wrap:break-word;word-break:break-all;">琉球キネシ · 10:00</div>
+              <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                <span style="font-size:6px;background:#ede9fe;color:#6d28d9;border-radius:2px;padding:0 3px;line-height:1.5;">マーケ</span>
+                <span style="font-size:6px;background:#eff6ff;color:#1d4ed8;border-radius:2px;padding:0 3px;line-height:1.5;">デザイン</span>
+              </div>
+            </div>
+          </div>
+        </td></tr><tr style="background:#ffffff;"></tr></tbody></table>
+  </div>
+  <div style="flex-shrink:0;padding:4px 12px;border-top:1px solid #e2e8f0;background:white;">
+    <span style="font-size:7.5px;color:#94a3b8;">制作ルール：マーケ原稿作成(3BD)→ 上長FB(1BD)→ デザイナー/動画へ提出 → 初稿(3BD)→ 初稿FB(1BD)→ 修正稿(1BD)→ FB(1BD)→ 3稿FB終了 → 最終調整(1.5BD)→ 入稿/公開</span>
+  </div>
+</div>
+
+<!-- ════════ GANTT POPUP ════════ -->
+<div id="gantt-overlay" onclick="closeGanttPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;"></div>
+<div id="gantt-popup" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:white;border-radius:20px 20px 0 0;padding:16px 16px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+  <div style="width:36px;height:4px;border-radius:2px;background:#e2e8f0;margin:0 auto 14px;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+    <div id="popup-header" style="flex:1;min-width:0;padding-right:8px;"></div>
+    <button onclick="closeGanttPopup()" style="flex-shrink:0;width:28px;height:28px;background:#f1f5f9;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="popup-body"></div>
+</div>
+
+<!-- ══════════════ TAB 3 ══════════════ -->
+<div id="tab3" class="tab-panel" style="background:#f0f4f8;">
+  <div style="flex-shrink:0;padding:10px 14px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:11px;font-weight:700;">進捗サマリー 画像</div>
+      <div style="font-size:9px;color:#94a3b8;">スマホ保存・シェア用PNG</div>
+    </div>
+    <button onclick="downloadPng()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:10px;font-weight:700;cursor:pointer;">保存</button>
+  </div>
+  <div id="png-canvas-wrap">
+    <div id="png-loading" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;color:#94a3b8;">
+      <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <span style="font-size:10px;">読み込み中…</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const GANTT_TASKS = [{"name":"DMチラシ","sub":"","cat":"DM・印刷物","dot":"#ef4444","mkSubmit":"6/3","publicDate":"6/15","catBg":"#fef2f2","catText":"#991b1b","catBorder":"#fca5a5"},{"name":"OGP画像","sub":"","cat":"オプトイン","dot":"#f97316","mkSubmit":"5/29","publicDate":"6/11","catBg":"#fff7ed","catText":"#9a3412","catBorder":"#fdba74"},{"name":"広告バナー 展開【広告課⇔マーケ】","sub":"","cat":"オプトイン","dot":"#f97316","mkSubmit":"6/3","publicDate":"6/15","catBg":"#fff7ed","catText":"#9a3412","catBorder":"#fdba74"},{"name":"オプトインページ（ハウス）","sub":"","cat":"オプトイン","dot":"#f97316","mkSubmit":"5/26","publicDate":"6/14","catBg":"#fff7ed","catText":"#9a3412","catBorder":"#fdba74"},{"name":"ゴッドハンド通信用バナー","sub":"","cat":"オプトイン","dot":"#f97316","mkSubmit":"6/17","publicDate":"6/29","catBg":"#fff7ed","catText":"#9a3412","catBorder":"#fdba74"},{"name":"LINEバナー（LINEクリエイティブ）","sub":"","cat":"オプトイン","dot":"#f97316","mkSubmit":"6/23","publicDate":"7/5","catBg":"#fff7ed","catText":"#9a3412","catBorder":"#fdba74"},{"name":"セトルメントページ【広告課⇔マーケ】","sub":"","cat":"レター・BE","dot":"#8b5cf6","mkSubmit":"5/28","publicDate":"6/11","catBg":"#f5f3ff","catText":"#5b21b6","catBorder":"#c4b5fd"},{"name":"プレゼントページ・コメント特典ページ","sub":"","cat":"レター・BE","dot":"#8b5cf6","mkSubmit":"6/12","publicDate":"6/25","catBg":"#f5f3ff","catText":"#5b21b6","catBorder":"#c4b5fd"},{"name":"LINEブリッジページ","sub":"","cat":"レター・BE","dot":"#8b5cf6","mkSubmit":"6/17","publicDate":"6/29","catBg":"#f5f3ff","catText":"#5b21b6","catBorder":"#c4b5fd"},{"name":"セールスレター","sub":"","cat":"レター・BE","dot":"#8b5cf6","mkSubmit":"6/3","publicDate":"6/22","catBg":"#f5f3ff","catText":"#5b21b6","catBorder":"#c4b5fd"},{"name":"Q&Aページ（よくある質問）","sub":"","cat":"レター・BE","dot":"#8b5cf6","mkSubmit":"6/15","publicDate":"6/28","catBg":"#f5f3ff","catText":"#5b21b6","catBorder":"#c4b5fd"},{"name":"オプトイン映像用スライド","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"5/26","publicDate":"6/11","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"オプトイン動画（〜45分）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"5/26","publicDate":"6/28","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"OP映像（1分）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/1","publicDate":"6/28","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"切り抜き動画広告 1陣（5本）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/19","publicDate":"7/2","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"新規動画広告①（漫画）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/3","publicDate":"6/17","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"切り抜き動画広告 2陣（5本）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/19","publicDate":"7/2","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"新規動画広告②","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/3","publicDate":"6/17","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"コメント特典動画","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/9","publicDate":"6/24","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"LINE特典動画","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/9","publicDate":"6/24","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"オプトインページ（広告）埋め込み用mp4動画","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/4","publicDate":"6/15","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"オプトインページ（ハウス）埋め込み用mp4動画","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/15","publicDate":"6/25","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"バックエンド募集動画（〜30分）\n体験会誘導動画（〜15分）","sub":"","cat":"動画","dot":"#10b981","mkSubmit":"6/4","publicDate":"7/1","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"BE募集動画スライド","sub":"琉球キネシ","cat":"動画","dot":"#10b981","mkSubmit":"6/17","publicDate":"6/17","catBg":"#f0fdf4","catText":"#065f46","catBorder":"#6ee7b7"},{"name":"先生の紹介画像","sub":"","cat":"その他","dot":"#94a3b8","mkSubmit":"5/7","publicDate":"5/21","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"バックエンド用スライド\n体験会募集スライド","sub":"","cat":"その他","dot":"#94a3b8","mkSubmit":"6/4","publicDate":"6/18","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"ストーリーライン作成","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/25","publicDate":"6/25","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"Youtube Live構成作成","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/25","publicDate":"6/25","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"号外訴求作成","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/20","publicDate":"6/20","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"号外1通目作成","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/29","publicDate":"6/29","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"OPTスライド完パケ","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/19","publicDate":"6/19","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"Liveスライド","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/12","publicDate":"6/12","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"特典モックアップ","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/10","publicDate":"6/10","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"かご落ち対策SL","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"6/30","publicDate":"6/30","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"},{"name":"かご落ち対策メール2通","sub":"琉球キネシ","cat":"その他","dot":"#94a3b8","mkSubmit":"7/3","publicDate":"7/3","catBg":"#f1f5f9","catText":"#475569","catBorder":"#cbd5e1"}];
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function showGanttPopup(idx){
+  const t = GANTT_TASKS[idx];
+  document.getElementById('popup-header').innerHTML =
+    '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+      '<span style="width:10px;height:10px;border-radius:50%;background:'+t.dot+';flex-shrink:0;margin-top:3px;"></span>' +
+      '<div style="min-width:0;">' +
+        '<div style="font-size:15px;font-weight:700;color:#1e293b;line-height:1.4;overflow-wrap:break-word;">' + esc(t.name) + '</div>' +
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">' +
+          '<span style="font-size:9px;padding:1px 8px;border-radius:999px;background:'+t.catBg+';color:'+t.catText+';border:1px solid '+t.catBorder+';">' + esc(t.cat) + '</span>' +
+          (t.sub ? '<span style="font-size:9px;color:#64748b;padding-top:1px;">' + esc(t.sub) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('popup-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+      '<div style="background:#fef3c7;border-radius:12px;padding:12px 14px;">' +
+        '<div style="font-size:9px;color:#92400e;font-weight:700;margin-bottom:5px;">📅 入稿日</div>' +
+        '<div style="font-size:15px;font-weight:800;color:#92400e;">' + (t.mkSubmit || '—') + '</div>' +
+      '</div>' +
+      '<div style="background:#dbeafe;border-radius:12px;padding:12px 14px;">' +
+        '<div style="font-size:9px;color:#1d4ed8;font-weight:700;margin-bottom:5px;">🚀 納品/公開日</div>' +
+        '<div style="font-size:15px;font-weight:800;color:#1d4ed8;">' + (t.publicDate || '—') + '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('gantt-overlay').style.display = 'block';
+  document.getElementById('gantt-popup').style.display = 'block';
+}
+
+function closeGanttPopup(){
+  document.getElementById('gantt-overlay').style.display = 'none';
+  document.getElementById('gantt-popup').style.display = 'none';
+}
+
+function showTab(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('tab'+i).classList.toggle('active',i===n);
+    const btn=document.getElementById('btn'+i);
+    btn.style.color=i===n?'#2563eb':'#94a3b8';
+    btn.style.borderBottomColor=i===n?'#2563eb':'transparent';
+  });
+  if(n===3) buildPng();
+  if(n===2){
+    const wrap=document.getElementById('gantt-wrap');
+    wrap.scrollLeft=90+14*20-wrap.clientWidth/2;
+  }
+}
+
+let pngBuilt=false;
+function buildPng(){
+  if(pngBuilt) return; pngBuilt=true;
+  const loading=document.getElementById('png-loading');
+  loading.style.display='flex';
+  html2canvas(document.getElementById('tab1'),{scale:2,backgroundColor:'#f0f4f8',useCORS:true}).then(canvas=>{
+    loading.style.display='none';
+    canvas.style.cssText='max-width:100%;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.12);';
+    document.getElementById('png-canvas-wrap').appendChild(canvas);
+  }).catch(()=>{document.getElementById('png-loading').innerHTML='<span style="font-size:10px;color:#ef4444;">生成失敗</span>';});
+}
+
+function downloadPng(){
+  const canvas=document.querySelector('#png-canvas-wrap canvas');
+  if(!canvas){alert('先にPNGタブを開いてください');return;}
+  const a=document.createElement('a');
+  a.download='progress_2026-09-07.png';
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+}
+
+// 初期スクロール位置（Tab2）
+setTimeout(()=>{
+  const wrap=document.getElementById('gantt-wrap');
+  if(wrap) wrap.scrollLeft=90+14*20-wrap.clientWidth/2;
+},100);
+</script>
+</body>
+</html>
